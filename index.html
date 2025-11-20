@@ -218,12 +218,21 @@
                         <div class="mb-4">
                             <label for="signup-email" class="block text-sm font-medium text-text-color/70">REC
                                 Email</label>
-                            <input type="email" id="signup-email" required placeholder="your.name@rajalakshmi.edu.in" pattern="^[a-zA-Z0-9._%+-]+@rajalakshmi\.edu\.in$"
+                            <input type="email" id="signup-email" required placeholder="your.name@rajalakshmi.edu.in"
                                 class="mt-1 block w-full px-4 py-2 bg-input-bg border border-gray-600 rounded-lg text-text-color focus:ring-intellexa-accent focus:border-intellexa-accent transition">
                         </div>
                         <div class="mb-4">
-                            <label for="signup-phone" class="block text-sm font-medium text-text-color/70">Contact</label>
-                            <input type="text" id="signup-phone" required placeholder="your phone number" minlength="10" maxlength="10" pattern="[0-9]{10}"
+                            <label for="signup-phone"
+                                class="block text-sm font-medium text-text-color/70">Contact</label>
+                            <input type="text" id="signup-phone" required placeholder="your phone number" minlength="10"
+                                maxlength="10" pattern="[0-9]{10}"
+                                class="mt-1 block w-full px-4 py-2 bg-input-bg border border-gray-600 rounded-lg text-text-color focus:ring-intellexa-accent focus:border-intellexa-accent transition">
+                        </div>
+                        <div class="mb-6">
+                            <label for="signup-password" class="block text-sm font-medium text-text-color/70">Set
+                                Password</label>
+                            <input type="password" id="signup-password" required minlength="6"
+                                placeholder="Min 6 characters"
                                 class="mt-1 block w-full px-4 py-2 bg-input-bg border border-gray-600 rounded-lg text-text-color focus:ring-intellexa-accent focus:border-intellexa-accent transition">
                         </div>
                     </div>
@@ -235,14 +244,6 @@
                             class="grid grid-cols-2 gap-3 p-3 bg-input-bg rounded-lg border border-gray-600">
                             <!-- Checkboxes will be inserted here by JS -->
                         </div>
-                    </div>
-
-                    <div class="mb-6">
-                        <label for="signup-password" class="block text-sm font-medium text-text-color/70">Set
-                            Password</label>
-                        <input type="password" id="signup-password" required minlength="6"
-                            placeholder="Min 6 characters"
-                            class="mt-1 block w-full px-4 py-2 bg-input-bg border border-gray-600 rounded-lg text-text-color focus:ring-intellexa-accent focus:border-intellexa-accent transition">
                     </div>
                     <button type="submit"
                         class="w-full py-3 bg-intellexa-accent hover:bg-emerald-500 text-body-bg font-semibold rounded-lg shadow-md transition duration-200 transform hover:scale-[1.01]">
@@ -618,6 +619,15 @@
             const domainCheckboxes = document.querySelectorAll('input[name="signup-domain"]:checked');
             const domains = Array.from(domainCheckboxes).map(cb => cb.value);
 
+            // Email domain validation
+const emailPattern = /^[a-zA-Z0-9._%+-]+@rajalakshmi\.edu\.in$/;
+
+if (!emailPattern.test(email)) {
+    msgEl.textContent = 'Error: Please use your @rajalakshmi.edu.in email.';
+    msgEl.className = 'mt-4 text-sm text-center text-red-400 h-5';
+    return;
+}
+
             msgEl.textContent = 'Signing up...';
             msgEl.className = 'mt-4 text-sm text-center text-yellow-400 h-5';
 
@@ -640,7 +650,7 @@
                 .eq('email', email)
                 .maybeSingle();
 
-            if (existingUser || email === ADMIN_CREDENTIALS.email) {
+            if (existingUser) {
                 msgEl.textContent = 'Error: Email already registered.';
                 msgEl.className = 'mt-4 text-sm text-center text-red-400 h-5';
                 return;
