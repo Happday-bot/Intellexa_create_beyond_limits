@@ -1,0 +1,1261 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Intellexa Volunteer Tracker</title>
+    <!-- Load Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Supabase CDN (This loads the library and makes 'supabase' available globally) -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <!-- Custom Tailwind Configuration for Tech/Club Vibe -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class', // Enable dark mode based on 'dark' class on parent (e.g., body)
+            theme: {
+                extend: {
+                    colors: {
+                        'intellexa-blue': 'var(--color-primary)', // Darker Blue
+                        'intellexa-light': 'var(--color-secondary)', // Lighter Blue
+                        'intellexa-accent': 'var(--color-accent)', // Emerald Green for emphasis
+                        'body-bg': 'var(--color-bg-primary)',
+                        'card-bg': 'var(--color-bg-secondary)',
+                        'text-color': 'var(--color-text-primary)',
+                        'input-bg': 'var(--color-input-bg)',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <!-- Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* Base Dark Theme Variables */
+        :root,
+        [data-theme="dark"] {
+            --color-bg-primary: #1f2937;
+            /* dark-bg */
+            --color-bg-secondary: #111827;
+            /* Very dark background for main body */
+            --color-text-primary: #f3f4f6;
+            --color-primary: #1e40af;
+            --color-secondary: #3b82f6;
+            --color-accent: #10b981;
+            --color-card-bg: #374151;
+            --color-input-bg: #4b5563;
+        }
+
+        /* Light Theme Variables */
+        [data-theme="light"] {
+            --color-bg-primary: #f3f4f6;
+            /* Light gray background */
+            --color-bg-secondary: #ffffff;
+            /* White cards */
+            --color-text-primary: #1f2937;
+            /* Dark text */
+            --color-primary: #1d4ed8;
+            /* Strong Blue */
+            --color-secondary: #2563eb;
+            /* Mid Blue */
+            --color-accent: #059669;
+            /* Darker Emerald */
+            --color-card-bg: #e5e7eb;
+            --color-input-bg: #ffffff;
+        }
+
+        /* Applying Variables to classes */
+        .bg-body-bg {
+            background-color: var(--color-bg-primary);
+        }
+
+        .bg-card-bg {
+            background-color: var(--color-card-bg);
+        }
+
+        .text-text-color {
+            color: var(--color-text-primary);
+        }
+
+        .text-intellexa-accent {
+            color: var(--color-accent);
+        }
+
+        .text-intellexa-light {
+            color: var(--color-secondary);
+        }
+
+        .bg-intellexa-blue {
+            background-color: var(--color-primary);
+        }
+
+        .hover\:bg-intellexa-light:hover {
+            background-color: var(--color-secondary);
+        }
+
+        .focus\:ring-intellexa-accent:focus {
+            --tw-ring-color: var(--color-accent);
+        }
+
+        .focus\:border-intellexa-accent:focus {
+            border-color: var(--color-accent);
+        }
+
+        .border-intellexa-blue\/50 {
+            border-color: color-mix(in srgb, var(--color-primary) 50%, transparent);
+        }
+
+        .border-intellexa-accent\/50 {
+            border-color: color-mix(in srgb, var(--color-accent) 50%, transparent);
+        }
+
+        /* Hide content until JS determines the view */
+        [data-view] {
+            display: none;
+        }
+
+        /* Custom scrollbar styling for a cleaner look */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: var(--color-card-bg);
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: color-mix(in srgb, var(--color-card-bg) 50%, var(--color-text-primary));
+            border-radius: 4px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: color-mix(in srgb, var(--color-card-bg) 20%, var(--color-text-primary));
+        }
+    </style>
+</head>
+
+<body class="bg-body-bg text-text-color font-sans min-h-screen flex flex-col" data-theme="dark">
+
+    <!-- Header / Navigation Bar -->
+    <header class="bg-card-bg shadow-lg sticky top-0 z-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex justify-between items-center">
+            <h1 class="text-2xl font-extrabold text-intellexa-accent">Intellexa <span
+                    class="text-intellexa-light">Tracker</span></h1>
+            <div class="flex items-center space-x-4">
+                <!-- Dark/Light Mode Toggle -->
+                <button id="theme-toggle-btn"
+                    class="p-2 rounded-full transition duration-150 hover:bg-gray-700 dark:hover:bg-gray-200"
+                    onclick="toggleTheme()">
+                    <!-- SVG for Sun/Moon Icon -->
+                    <svg id="sun-icon" class="w-6 h-6 text-yellow-400" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z">
+                        </path>
+                    </svg>
+                    <svg id="moon-icon" class="w-6 h-6 text-gray-500 hidden" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z">
+                        </path>
+                    </svg>
+                </button>
+                <button id="logout-btn"
+                    class="hidden text-sm font-semibold text-gray-400 hover:text-red-400 transition duration-150 p-2 rounded-lg"
+                    onclick="handleLogout()">
+                    Logout
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="flex-grow max-w-7xl mx-auto w-full p-4 sm:p-6 lg:p-8">
+
+        <!-- Initial Login/Signup View -->
+        <section id="auth-view" data-view="auth"
+            class="flex flex-col md:flex-row justify-center items-start space-y-8 md:space-y-0 md:space-x-12 mt-10">
+            <!-- Login Card -->
+            <div
+                class="w-full md:w-5/12 lg:w-4/12 bg-card-bg p-8 rounded-xl shadow-2xl border border-intellexa-blue/50 transform hover:scale-[1.01] transition-transform duration-300">
+                <h2 class="text-3xl font-bold mb-6 text-intellexa-light">Sign In</h2>
+                <form id="login-form" onsubmit="handleLogin(event)">
+                    <div class="mb-4">
+                        <label for="login-email" class="block text-sm font-medium text-text-color/70">Email</label>
+                        <input type="email" id="login-email" required placeholder="admin@intellexa.rec or user@rec.edu"
+                            class="mt-1 block w-full px-4 py-2 bg-input-bg border border-gray-600 rounded-lg text-text-color focus:ring-intellexa-accent focus:border-intellexa-accent transition">
+                    </div>
+                    <div class="mb-6">
+                        <label for="login-password"
+                            class="block text-sm font-medium text-text-color/70">Password</label>
+                        <input type="password" id="login-password" required placeholder="********"
+                            class="mt-1 block w-full px-4 py-2 bg-input-bg border border-gray-600 rounded-lg text-text-color focus:ring-intellexa-accent focus:border-intellexa-accent transition">
+                    </div>
+                    <button type="submit"
+                        class="w-full py-3 bg-intellexa-blue hover:bg-intellexa-light text-white font-semibold rounded-lg shadow-md transition duration-200 transform hover:scale-[1.01]">
+                        Log In
+                    </button>
+                    <p id="login-message" class="mt-4 text-sm text-center text-red-400 h-5"></p>
+                </form>
+            </div>
+
+            <!-- Signup Card (Updated for Multi-Domain) -->
+            <div
+                class="w-full md:w-7/12 lg:w-6/12 bg-card-bg p-8 rounded-xl shadow-2xl border border-intellexa-accent/50 transform hover:scale-[1.01] transition-transform duration-300">
+                <h2 class="text-3xl font-bold mb-6 text-intellexa-accent">New Volunteer Sign Up</h2>
+                <form id="signup-form" onsubmit="handleSignup(event)">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="mb-4">
+                            <label for="signup-name" class="block text-sm font-medium text-text-color/70">Full
+                                Name</label>
+                            <input type="text" id="signup-name" required placeholder="John Doe"
+                                class="mt-1 block w-full px-4 py-2 bg-input-bg border border-gray-600 rounded-lg text-text-color focus:ring-intellexa-accent focus:border-intellexa-accent transition">
+                        </div>
+                        <div class="mb-4">
+                            <label for="signup-email" class="block text-sm font-medium text-text-color/70">REC
+                                Email</label>
+                            <input type="email" id="signup-email" required placeholder="your.name@rec.edu"
+                                class="mt-1 block w-full px-4 py-2 bg-input-bg border border-gray-600 rounded-lg text-text-color focus:ring-intellexa-accent focus:border-intellexa-accent transition">
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-text-color/70 mb-2">Domains of Interest (Select one
+                            or more)</label>
+                        <div id="signup-domains-container"
+                            class="grid grid-cols-2 gap-3 p-3 bg-input-bg rounded-lg border border-gray-600">
+                            <!-- Checkboxes will be inserted here by JS -->
+                        </div>
+                    </div>
+
+                    <div class="mb-6">
+                        <label for="signup-password" class="block text-sm font-medium text-text-color/70">Set
+                            Password</label>
+                        <input type="password" id="signup-password" required minlength="6"
+                            placeholder="Min 6 characters"
+                            class="mt-1 block w-full px-4 py-2 bg-input-bg border border-gray-600 rounded-lg text-text-color focus:ring-intellexa-accent focus:border-intellexa-accent transition">
+                    </div>
+                    <button type="submit"
+                        class="w-full py-3 bg-intellexa-accent hover:bg-emerald-500 text-body-bg font-semibold rounded-lg shadow-md transition duration-200 transform hover:scale-[1.01]">
+                        Join the Club!
+                    </button>
+                    <p id="signup-message" class="mt-4 text-sm text-center text-green-400 h-5"></p>
+                </form>
+            </div>
+        </section>
+
+        <!-- Volunteer/User Dashboard View -->
+        <section id="user-view" data-view="user-dashboard" class="hidden">
+            <h2 class="text-4xl font-extrabold text-intellexa-light mb-2">Welcome, <span id="user-name"></span>!</h2>
+            <p class="text-xl text-text-color/70 mb-8">Your Domains: <span id="user-domains"
+                    class="font-semibold text-intellexa-accent"></span></p>
+
+            <!-- URL Submission Panel -->
+            <div class="bg-card-bg p-6 rounded-xl shadow-2xl border border-red-400/50 mb-8">
+                <h3 class="text-2xl font-bold mb-4 text-red-400">Submit Your Work URL</h3>
+                <form id="submission-form" onsubmit="handleSubmission(event)">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="md:col-span-2">
+                            <label for="submission-url" class="block text-sm font-medium text-text-color/70">Link to
+                                Your Contribution (e.g., Google Drive, GitHub, Blog URL)</label>
+                            <input type="url" id="submission-url" required placeholder="https://link.to/your/work"
+                                class="mt-1 block w-full px-4 py-2 bg-input-bg border border-gray-600 rounded-lg text-text-color focus:ring-red-400 focus:border-red-400 transition">
+                        </div>
+                        <div>
+                            <label for="submission-domain" class="block text-sm font-medium text-text-color/70">Primary
+                                Domain for this submission</label>
+                            <select id="submission-domain" required
+                                class="mt-1 block w-full px-4 py-2 bg-input-bg border border-gray-600 rounded-lg text-text-color focus:ring-red-400 focus:border-red-400 transition appearance-none">
+                                <option value="" disabled selected>-- Select Domain --</option>
+                                <!-- Domains populated by JS based on user's interests -->
+                            </select>
+                        </div>
+                    </div>
+                    <button type="submit"
+                        class="mt-4 py-3 px-8 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg shadow-md transition duration-200">
+                        Log Submission
+                    </button>
+                    <p id="submission-message" class="mt-4 text-sm text-center text-green-400 h-5"></p>
+                </form>
+            </div>
+
+            <!-- Individual Progress -->
+            <div class="bg-card-bg p-6 rounded-xl shadow-2xl border border-intellexa-blue/50 mb-8">
+                <h3 class="text-2xl font-bold mb-4 text-text-color/90">Your Individual Progress</h3>
+                <div id="user-progress" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <!-- Progress Cards will be injected here -->
+                </div>
+            </div>
+
+            <!-- Global Leaderboard (Rendered here for both) -->
+            <div class="bg-card-bg p-6 rounded-xl shadow-2xl border border-intellexa-accent/50">
+                <h3 class="text-2xl font-bold mb-4 text-text-color/90">Global Leaderboard</h3>
+                <div id="global-leaderboard-container" class="custom-scrollbar overflow-x-auto">
+                    <!-- Leaderboard tabs and tables will be injected here -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Admin Dashboard View -->
+        <section id="admin-view" data-view="admin-dashboard" class="hidden">
+            <h2 class="text-4xl font-extrabold text-red-400 mb-8">Admin Control Panel</h2>
+
+            <!-- Admin Search and Stats -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                <!-- Search bar for filtering lists -->
+                <div class="lg:col-span-1">
+                    <label for="admin-search" class="block text-sm font-medium text-text-color/70">Filter Submissions by
+                        Name/URL/Domain</label>
+                    <input type="text" id="admin-search" placeholder="Start typing name or keyword..."
+                        oninput="renderAdminSubmissions()"
+                        class="mt-1 block w-full px-4 py-2 bg-input-bg border border-gray-600 rounded-lg text-text-color focus:ring-intellexa-accent focus:border-intellexa-accent transition">
+                </div>
+
+                <!-- Quick Stats -->
+                <div
+                    class="lg:col-span-2 bg-card-bg p-4 rounded-xl shadow-md border border-intellexa-accent/50 flex space-x-4">
+                    <div class="flex-1 p-2 bg-input-bg rounded-lg">
+                        <p class="text-sm text-text-color/70">Total Volunteers:</p>
+                        <span id="stat-total-volunteers" class="text-2xl font-bold text-intellexa-light"></span>
+                    </div>
+                    <div class="flex-1 p-2 bg-input-bg rounded-lg">
+                        <p class="text-sm text-text-color/70">Scored Entries:</p>
+                        <span id="stat-total-scores" class="text-2xl font-bold text-intellexa-light"></span>
+                    </div>
+                    <div class="flex-1 p-2 bg-input-bg rounded-lg">
+                        <p class="text-sm text-text-color/70">Max Quality Score:</p>
+                        <span id="stat-max-quality" class="text-2xl font-bold text-intellexa-light"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content Area: Pending & Scoring Form -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- 1. Pending Submissions List -->
+                <div id="pending-submissions-card"
+                    class="bg-card-bg p-6 rounded-xl shadow-2xl border border-red-400/50">
+                    <h3 class="text-2xl font-bold mb-4 text-red-400 flex justify-between items-center">
+                        Pending Submissions (Click to Score)
+                        <span id="pending-count" class="text-lg bg-red-600 rounded-full px-3 py-1 text-white">0</span>
+                    </h3>
+                    <div id="pending-submissions-list" class="space-y-3 max-h-96 custom-scrollbar overflow-y-auto">
+                        <!-- Pending items rendered here -->
+                        <p class="text-center text-text-color/50 pt-10">Loading pending submissions...</p>
+                    </div>
+                </div>
+
+                <!-- 2. Scoring Form (Hidden by default, shown on click) -->
+                <div id="scoring-form-card"
+                    class="bg-card-bg p-6 rounded-xl shadow-2xl border border-intellexa-blue/50 hidden">
+                    <h3 class="text-2xl font-bold mb-4 text-intellexa-light">Score Submission <span
+                            id="scoring-domain-name" class="text-sm font-normal text-text-color/70"></span></h3>
+                    <p class="mb-4 text-sm text-text-color/80">Evaluate work by: <span id="scoring-volunteer-name"
+                            class="font-semibold text-intellexa-accent"></span></p>
+                    <a id="scoring-submission-url" href="#" target="_blank"
+                        class="block mb-6 text-sm text-blue-400 hover:underline truncate">URL: Click to Review Work</a>
+
+                    <form id="score-entry-form" onsubmit="handleScoreEntry(event)">
+                        <!-- Hidden fields to pass the ID of the submission being scored -->
+                        <input type="hidden" id="scoring-submission-id">
+
+                        <div class="grid grid-cols-2 gap-4 mb-6">
+                            <div>
+                                <label for="score-contributions"
+                                    class="block text-sm font-medium text-text-color/70">Contributions (Number of
+                                    items)</label>
+                                <input type="number" id="score-contributions" required min="1" value="1"
+                                    class="mt-1 block w-full px-4 py-2 bg-input-bg border border-gray-600 rounded-lg text-text-color focus:ring-intellexa-accent focus:border-intellexa-accent transition">
+                            </div>
+                            <div>
+                                <label for="score-quality" class="block text-sm font-medium text-text-color/70">Quality
+                                    Score (0.1 - 10.0)</label>
+                                <input type="number" id="score-quality" required step="0.1" min="0.1" max="10"
+                                    value="8.0"
+                                    class="mt-1 block w-full px-4 py-2 bg-input-bg border border-gray-600 rounded-lg text-text-color focus:ring-intellexa-accent focus:border-intellexa-accent transition">
+                            </div>
+                        </div>
+
+                        <button type="submit"
+                            class="w-full py-3 bg-intellexa-blue hover:bg-intellexa-light text-white font-semibold rounded-lg shadow-md transition duration-200">
+                            Finalize & Publish Score
+                        </button>
+                        <p id="score-message" class="mt-4 text-sm text-center text-green-400 h-5"></p>
+                    </form>
+                    <button onclick="document.getElementById('scoring-form-card').classList.add('hidden')"
+                        class="w-full mt-2 py-2 text-sm text-text-color/70 hover:text-red-400 transition">Cancel</button>
+                </div>
+            </div>
+
+            <!-- 3. Completed Scores List (Full Width) -->
+            <div class="bg-card-bg p-6 rounded-xl shadow-2xl border border-intellexa-accent/50 mt-8">
+                <h3 class="text-2xl font-bold mb-4 text-intellexa-accent flex justify-between items-center">
+                    Completed Scores
+                    <span id="completed-count"
+                        class="text-lg bg-intellexa-accent rounded-full px-3 py-1 text-white">0</span>
+                </h3>
+                <div id="completed-scores-list" class="custom-scrollbar overflow-x-auto">
+                    <!-- Completed items table rendered here -->
+                </div>
+            </div>
+
+            <!-- Global Leaderboard (Admin View) -->
+            <div class="bg-card-bg p-6 rounded-xl shadow-2xl border border-intellexa-accent/50 mt-8">
+                <h3 class="text-2xl font-bold mb-4 text-text-color/90">Volunteer Leaderboard</h3>
+                <div id="admin-leaderboard-container" class="custom-scrollbar overflow-x-auto">
+                    <!-- Leaderboard tabs and tables will be injected here -->
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-card-bg text-text-color/50 text-center py-4 text-sm mt-8">
+        © 2024 Intellexa Club, REC. Built for Volunteer Progress Tracking.
+    </footer>
+
+    <script>
+        // ====================================================================
+        // === STEP 1: SUPABASE CONFIGURATION (REPLACE PLACEHOLDERS) ===
+        // ====================================================================
+
+        // !!! IMPORTANT: Replace these placeholders with your actual Supabase credentials !!!
+        const SUPABASE_URL = 'https://ydcmkdtjvptuytqhydpc.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlkY21rZHRqdnB0dXl0cWh5ZHBjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM2NTQ0MTgsImV4cCI6MjA3OTIzMDQxOH0.WJ9ZcOSUx7xioMZxV7VCBXdra2UA9VQpyfJF9gkMRDo';
+
+        // Initialize Supabase Client
+        let supabase;
+        try {
+            if (SUPABASE_URL.includes('YOUR_SUPABASE_URL')) {
+                console.error("Supabase Initialization Error: Supabase credentials not set. Please update the SUPABASE_URL and SUPABASE_ANON_KEY in the script.");
+            }
+            // FIX: The CDN script exports the object globally as 'supabase'
+            // We use 'window.supabase.createClient' or just 'supabase.createClient' if the script is loaded before this block.
+            // Since we're using a script tag directly, the name is just 'supabase'.
+            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            console.log("Supabase client initialized successfully.");
+        } catch (error) {
+            console.error("Supabase Initialization Error:", error.message);
+            supabase = null;
+        }
+
+        // ====================================================================
+        // === STEP 2: GLOBAL MOCK DATA & STATE (NOW CACHED) ===
+        // ====================================================================
+
+        const APP_DOMAINS = ['Poster Designing', 'Video Editing', 'Blog Writing', 'Marketing'];
+        const ADMIN_CREDENTIALS = {
+            email: 'admin@intellexa.rec',
+            password: 'adminpassword123',
+            id: 'admin' // Simple ID for admin mock login
+        };
+
+        let currentUserId = null;
+        let currentUserRole = null;
+        let users = []; // Data will be fetched from Supabase
+        let scores = []; // Data will be fetched from Supabase
+
+        let allLeaderboardData = {}; // Cache for pre-calculated leaderboard
+
+        // ====================================================================
+        // === STEP 3: DATA FETCHING AND CACHING (Supabase) ===
+        // ====================================================================
+
+        /**
+         * Fetches all user and score data from Supabase and updates local cache.
+         */
+        async function fetchAllData() {
+            if (!supabase) return { error: "Supabase not initialized." };
+
+            // Fetch users data
+            let { data: usersData, error: usersError } = await supabase
+                .from('users')
+                .select('*');
+
+            if (usersError) {
+                console.error("Error fetching users:", usersError);
+                // Return an error object and keep existing data if possible
+                return { error: usersError.message };
+            }
+
+            // Fetch scores data
+            let { data: scoresData, error: scoresError } = await supabase
+                .from('scores')
+                .select('*');
+
+            if (scoresError) {
+                console.error("Error fetching scores:", scoresError);
+                return { error: scoresError.message };
+            }
+
+            // Update global state
+            users = usersData || [];
+            scores = scoresData || [];
+
+            // Recalculate and cache leaderboard
+            allLeaderboardData = calculateLeaderboard();
+
+            return { success: true };
+        }
+
+        // ====================================================================
+        // --- THEME/MODE FUNCTIONS ---
+        // ====================================================================
+
+        function toggleTheme() {
+            const body = document.body;
+            const currentTheme = body.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            body.setAttribute('data-theme', newTheme);
+            localStorage.setItem('intellexa-theme', newTheme);
+            updateThemeIcons(newTheme);
+        }
+
+        function updateThemeIcons(theme) {
+            const sunIcon = document.getElementById('sun-icon');
+            const moonIcon = document.getElementById('moon-icon');
+            if (sunIcon && moonIcon) {
+                if (theme === 'light') {
+                    sunIcon.classList.add('hidden');
+                    moonIcon.classList.remove('hidden');
+                } else {
+                    sunIcon.classList.remove('hidden');
+                    moonIcon.classList.add('hidden');
+                }
+            }
+        }
+
+        function loadTheme() {
+            const savedTheme = localStorage.getItem('intellexa-theme') || 'dark';
+            document.body.setAttribute('data-theme', savedTheme);
+            updateThemeIcons(savedTheme);
+        }
+
+
+        // ====================================================================
+        // --- AUTHENTICATION FUNCTIONS (Supabase Logic) ---
+        // ====================================================================
+
+        async function handleLogin(event) {
+            event.preventDefault();
+            const email = document.getElementById('login-email').value.toLowerCase().trim();
+            const password = document.getElementById('login-password').value;
+            const msgEl = document.getElementById('login-message');
+            msgEl.textContent = 'Logging in...';
+
+            if (!supabase) {
+                msgEl.textContent = 'Error: Supabase is not configured.';
+                return;
+            }
+
+            let authData = null;
+
+            // 1. Try user table
+            let { data: userData, error: userError } = await supabase
+                .from('users')
+                .select('id, name, email, password, role')
+                .eq('email', email)
+                .single();
+
+            if (userData) {
+                authData = userData;
+            } else {
+                // 2. Try admin table
+                let { data: adminData, error: adminError } = await supabase
+                    .from('admin')
+                    .select('id, name, email, password, role')
+                    .eq('email', email)
+                    .single();
+
+                if (adminData) {
+                    authData = adminData;
+                } else {
+                    // Neither found
+                    msgEl.textContent = 'Invalid credentials or user not found.';
+                    currentUserId = null;
+                    currentUserRole = null;
+                    return;
+                }
+            }
+
+            // 3. Validate password
+            if (authData.password !== password) {
+                msgEl.textContent = 'Invalid password.';
+                currentUserId = null;
+                currentUserRole = null;
+                return;
+            }
+
+            // 4. Auth success
+            currentUserId = authData.id;
+            currentUserRole = authData.role;
+
+
+
+            // Login Successful - Fetch data and render
+            msgEl.textContent = (currentUserRole === 'admin' ? 'Admin' : 'User') + ' login successful!';
+            await fetchAllData();
+            renderView();
+        }
+
+        async function handleSignup(event) {
+            event.preventDefault();
+            const name = document.getElementById('signup-name').value.trim();
+            const email = document.getElementById('signup-email').value.toLowerCase().trim();
+            const password = document.getElementById('signup-password').value;
+            const msgEl = document.getElementById('signup-message');
+
+            const domainCheckboxes = document.querySelectorAll('input[name="signup-domain"]:checked');
+            const domains = Array.from(domainCheckboxes).map(cb => cb.value);
+
+            msgEl.textContent = 'Signing up...';
+            msgEl.className = 'mt-4 text-sm text-center text-yellow-400 h-5';
+
+            if (!supabase) {
+                msgEl.textContent = 'Error: Supabase is not configured.';
+                msgEl.className = 'mt-4 text-sm text-center text-red-400 h-5';
+                return;
+            }
+
+            if (domains.length === 0) {
+                msgEl.textContent = 'Error: Please select at least one domain of interest.';
+                msgEl.className = 'mt-4 text-sm text-center text-red-400 h-5';
+                return;
+            }
+
+            // Check if email already exists
+            const { data: existingUser } = await supabase
+                .from('users')
+                .select('id')
+                .eq('email', email)
+                .maybeSingle();
+
+            if (existingUser || email === ADMIN_CREDENTIALS.email) {
+                msgEl.textContent = 'Error: Email already registered.';
+                msgEl.className = 'mt-4 text-sm text-center text-red-400 h-5';
+                return;
+            }
+
+            // Generate a simple client-side ID (Supabase Auth would provide a UUID)
+            const newUserId = 'u-' + Date.now().toString(36);
+
+            // Insert new user into Supabase
+            const { data: newUser, error: insertError } = await supabase
+                .from('users')
+                .insert([
+                    // Note: Supabase can automatically convert a JS array into a Postgres TEXT[]
+                    { id: newUserId, name, email, domains: domains, password }
+                ])
+                .select()
+                .single();
+
+            if (insertError) {
+                console.error("Signup error:", insertError);
+                msgEl.textContent = `Signup failed: ${insertError.message}`;
+                msgEl.className = 'mt-4 text-sm text-center text-red-400 h-5';
+                return;
+            }
+
+            currentUserId = newUser.id;
+            currentUserRole = 'user';
+
+            msgEl.textContent = 'Account created successfully! Redirecting to dashboard...';
+            msgEl.className = 'mt-4 text-sm text-center text-green-400 h-5';
+            event.target.reset();
+
+            await fetchAllData();
+            setTimeout(renderView, 1500);
+        }
+
+        function handleLogout() {
+            currentUserId = null;
+            currentUserRole = null;
+            users = []; // Clear cached data
+            scores = [];
+            document.getElementById('login-message').textContent = '';
+            document.getElementById('signup-message').textContent = '';
+            document.getElementById('login-form').reset();
+            renderView();
+        }
+
+
+        // ====================================================================
+        // --- URL SUBMISSION (USER - Supabase Logic) ---
+        // ====================================================================
+
+        async function handleSubmission(event) {
+            event.preventDefault();
+            const url = document.getElementById('submission-url').value.trim();
+            const domain = document.getElementById('submission-domain').value;
+            const msgEl = document.getElementById('submission-message');
+            msgEl.textContent = 'Submitting...';
+            msgEl.className = 'mt-4 text-sm text-center text-yellow-400 h-5';
+
+            if (!url || !domain) {
+                msgEl.textContent = 'Error: URL and Domain are required.';
+                msgEl.className = 'mt-4 text-sm text-center text-red-400 h-5';
+                return;
+            }
+            if (!supabase) {
+                msgEl.textContent = 'Error: Supabase is not configured.';
+                msgEl.className = 'mt-4 text-sm text-center text-red-400 h-5';
+                return;
+            }
+
+            // Insert submission (quality_score defaults to 0 in DB = Pending)
+            const newSubmission = {
+                user_id: currentUserId,
+                domain: domain,
+                contributions: 1,
+                submission_url: url,
+                quality_score: 0.0 // Ensure it's explicitly 0 for pending status
+            };
+
+            const { error } = await supabase
+                .from('scores')
+                .insert([newSubmission]);
+
+            if (error) {
+                console.error("Submission error:", error);
+                msgEl.textContent = `Submission failed: ${error.message}`;
+                msgEl.className = 'mt-4 text-sm text-center text-red-400 h-5';
+                return;
+            }
+
+            // Success - Refetch data and update UI
+            msgEl.textContent = `Submission for ${domain} logged successfully. Awaiting Admin review!`;
+            msgEl.className = 'mt-4 text-sm text-center text-green-400 h-5';
+            event.target.reset();
+            await fetchAllData();
+            renderUserDashboard();
+        }
+
+        // ====================================================================
+        // --- DATA PROCESSING FUNCTIONS (Uses Cached Data) ---
+        // ====================================================================
+
+        /**
+         * Calculates aggregated scores for the leaderboard using the cached data.
+         */
+        function calculateLeaderboard() {
+            const domainRankings = {};
+            const userAggregates = {};
+
+            // 1. Aggregate scores per user
+            users.forEach(user => {
+                // Ensure domains is an array for safety
+                // Supabase returns a JSON array from a Postgres array field.
+                const userDomains = Array.isArray(user.domains) ? user.domains : (user.domains ? [user.domains] : []);
+
+                userAggregates[user.id] = {
+                    id: user.id,
+                    name: user.name,
+                    primaryDomains: userDomains.join(' | '),
+                    totalContributions: 0,
+                    totalQualityScore: 0,
+                };
+            });
+
+            scores.forEach(score => {
+                // Ensure quality_score is numeric, default to 0
+                const qualityScore = parseFloat(score.quality_score) || 0;
+                const contributions = parseInt(score.contributions) || 0;
+
+                // Only count SCORED (completed) entries
+                if (userAggregates[score.user_id] && qualityScore > 0) {
+                    userAggregates[score.user_id].totalContributions += contributions;
+                    userAggregates[score.user_id].totalQualityScore += (qualityScore * contributions); // Weighted score
+                }
+            });
+
+            // 2. Calculate average score and total score (used for primary ranking)
+            const allUsersRanked = Object.values(userAggregates).map(u => {
+                // Calculate actual scored entries based on scores table
+                const totalScoredEntries = scores.filter(s => s.user_id === u.id && (parseFloat(s.quality_score) || 0) > 0).reduce((sum, s) => sum + (parseInt(s.contributions) || 0), 0);
+
+                return {
+                    ...u,
+                    averageQuality: totalScoredEntries > 0 ? (u.totalQualityScore / totalScoredEntries).toFixed(2) : 'N/A',
+                    totalScore: u.totalQualityScore.toFixed(1)
+                };
+            }).sort((a, b) => b.totalQualityScore - a.totalQualityScore);
+
+            // 3. Create domain-specific leaderboards
+            APP_DOMAINS.forEach(domain => {
+                const domainUserScores = {};
+                scores.filter(s => s.domain === domain && (parseFloat(s.quality_score) || 0) > 0).forEach(score => {
+                    const userId = score.user_id;
+                    const qualityScore = parseFloat(score.quality_score) || 0;
+                    const contributions = parseInt(score.contributions) || 0;
+
+                    if (!domainUserScores[userId]) {
+                        const user = users.find(u => u.id === userId);
+                        domainUserScores[userId] = {
+                            userId: userId,
+                            userName: user ? user.name : 'Unknown User',
+                            contributions: 0,
+                            totalQuality: 0
+                        };
+                    }
+                    domainUserScores[userId].contributions += contributions;
+                    domainUserScores[userId].totalQuality += (qualityScore * contributions);
+                });
+
+                const rankedDomainUsers = Object.values(domainUserScores).map(u => ({
+                    ...u,
+                    averageQuality: (u.totalQuality / u.contributions).toFixed(2),
+                    rankingScore: u.totalQuality
+                })).sort((a, b) => b.rankingScore - a.rankingScore);
+
+                domainRankings[domain] = rankedDomainUsers;
+            });
+
+            return { all: allUsersRanked, domains: domainRankings };
+        }
+
+        // ====================================================================
+        // --- RENDERING FUNCTIONS ---
+        // ====================================================================
+
+        async function renderView() {
+            loadTheme();
+
+            const allViews = document.querySelectorAll('[data-view]');
+            allViews.forEach(el => el.style.display = 'none');
+            document.getElementById('logout-btn').classList.add('hidden');
+
+            const scoringCard = document.getElementById('scoring-form-card');
+            if (scoringCard) scoringCard.classList.add('hidden');
+            const searchInput = document.getElementById('admin-search');
+            if (searchInput) searchInput.value = '';
+
+            if (currentUserRole === 'admin') {
+                document.getElementById('admin-view').style.display = 'block';
+                document.getElementById('logout-btn').classList.remove('hidden');
+                await renderAdminDashboard();
+            } else if (currentUserRole === 'user') {
+                document.getElementById('user-view').style.display = 'block';
+                document.getElementById('logout-btn').classList.remove('hidden');
+                await renderUserDashboard();
+            } else {
+                // Default view (Auth)
+                document.getElementById('auth-view').style.display = 'flex';
+                populateSignupDomains();
+            }
+
+            if (currentUserRole) {
+                // Always render leaderboards if logged in
+                renderLeaderboard(currentUserRole === 'admin' ? 'admin-leaderboard-container' : 'global-leaderboard-container');
+            }
+        }
+
+        function populateSignupDomains() {
+            const container = document.getElementById('signup-domains-container');
+            if (!container) return;
+            container.innerHTML = APP_DOMAINS.map((domain, index) => `
+                <label class="flex items-center text-sm space-x-2 text-text-color/80 hover:text-intellexa-accent transition">
+                    <input type="checkbox" name="signup-domain" value="${domain}" class="form-checkbox h-4 w-4 text-intellexa-accent rounded border-gray-600 focus:ring-intellexa-accent">
+                    <span>${index + 1}. ${domain}</span>
+                </label>
+            `).join('');
+        }
+
+        // --- USER DASHBOARD RENDERING ---
+        async function renderUserDashboard() {
+            const user = users.find(u => u.id === currentUserId);
+            if (!user) return;
+
+            document.getElementById('user-name').textContent = user.name;
+
+            // Ensure domains is treated as an array and displayed nicely
+            const userDomainsArray = Array.isArray(user.domains) ? user.domains : (user.domains ? user.domains.split(',').map(d => d.trim()) : []);
+            document.getElementById('user-domains').textContent = userDomainsArray.join(' | ');
+
+            // Pending submissions have quality_score = 0
+            const userScores = scores.filter(s => s.user_id === user.id && (parseFloat(s.quality_score) || 0) > 0);
+            const userSubmissions = scores.filter(s => s.user_id === user.id && (parseFloat(s.quality_score) || 0) === 0);
+
+            const progressContainer = document.getElementById('user-progress');
+            progressContainer.innerHTML = '';
+
+            const aggregatedProgress = userScores.reduce((acc, score) => {
+                const contributions = parseInt(score.contributions) || 0;
+                const qualityScore = parseFloat(score.quality_score) || 0;
+
+                if (!acc[score.domain]) {
+                    acc[score.domain] = { contributions: 0, totalQuality: 0, pending: 0 };
+                }
+                acc[score.domain].contributions += contributions;
+                acc[score.domain].totalQuality += qualityScore * contributions;
+                return acc;
+            }, {});
+
+            userSubmissions.forEach(sub => {
+                if (!aggregatedProgress[sub.domain]) {
+                    aggregatedProgress[sub.domain] = { contributions: 0, totalQuality: 0, pending: 0 };
+                }
+                // Count pending submissions as 1 unit or by their contribution value
+                aggregatedProgress[sub.domain].pending += (parseInt(sub.contributions) || 1);
+            });
+
+
+            let totalContributions = 0;
+            let totalQualitySum = 0;
+
+            const allDomainsToShow = new Set([...userDomainsArray, ...Object.keys(aggregatedProgress)]);
+
+            // Populate submission domain select
+            const submissionDomainSelect = document.getElementById('submission-domain');
+            submissionDomainSelect.innerHTML = '<option value="" disabled selected>-- Select Domain --</option>';
+            userDomainsArray.forEach(domain => {
+                const option = document.createElement('option');
+                option.value = domain;
+                option.textContent = domain;
+                submissionDomainSelect.appendChild(option);
+            });
+
+
+            // Render cards
+            allDomainsToShow.forEach(domain => {
+                const data = aggregatedProgress[domain] || { contributions: 0, totalQuality: 0, pending: 0 };
+                const avgQuality = data.contributions > 0 ? (data.totalQuality / data.contributions).toFixed(2) : 'N/A';
+                totalContributions += data.contributions;
+                totalQualitySum += data.totalQuality;
+
+                const cardHtml = `
+                    <div class="p-5 bg-card-bg rounded-lg shadow-xl border-l-4 ${userDomainsArray.includes(domain) ? 'border-intellexa-accent' : 'border-gray-500'}">
+                        <p class="text-sm font-medium text-text-color/70">${domain}</p>
+                        <p class="text-3xl font-extrabold text-intellexa-light mt-1">${data.contributions}</p>
+                        <p class="text-sm text-text-color/70">Scored Contributions</p>
+                        <div class="mt-3 flex justify-between items-center">
+                            <span class="text-xs font-semibold uppercase text-intellexa-accent">Avg Quality:</span>
+                            <span class="text-lg font-bold ${data.contributions > 0 && parseFloat(avgQuality) >= 8.5 ? 'text-green-400' : 'text-yellow-400'}">${avgQuality}</span>
+                        </div>
+                        <p class="text-xs mt-2 text-red-400 font-semibold">${data.pending} Pending Submissions</p>
+                    </div>
+                `;
+                progressContainer.insertAdjacentHTML('beforeend', cardHtml);
+            });
+
+            // Summary Card (Placed at the beginning)
+            const overallAverage = totalContributions > 0 ? (totalQualitySum / totalContributions).toFixed(2) : 'N/A';
+            const overallCard = `
+                <div class="p-5 bg-card-bg rounded-lg shadow-xl border-l-4 border-intellexa-blue col-span-full">
+                    <p class="text-sm font-medium text-text-color/70">Overall Summary</p>
+                    <div class="flex flex-wrap items-center space-x-8 mt-2">
+                        <div>
+                            <p class="text-4xl font-extrabold text-intellexa-light">${totalContributions}</p>
+                            <p class="text-sm text-text-color/70">Total Scored Contributions</p>
+                        </div>
+                        <div>
+                            <p class="text-4xl font-extrabold text-intellexa-light">${overallAverage}</p>
+                            <p class="text-sm text-text-color/70">Overall Weighted Average Quality</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+            progressContainer.insertAdjacentHTML('afterbegin', overallCard);
+        }
+
+        // --- ADMIN DASHBOARD RENDERING ---
+
+        async function renderAdminDashboard() {
+            // Re-fetch data to ensure stats are fresh
+            await fetchAllData();
+
+            // 1. Populate Admin Stats
+            document.getElementById('stat-total-volunteers').textContent = users.length;
+            document.getElementById('stat-total-scores').textContent = scores.filter(s => (parseFloat(s.quality_score) || 0) > 0).length;
+            const maxQuality = scores.reduce((max, s) => Math.max(max, (parseFloat(s.quality_score) || 0)), 0).toFixed(1);
+            document.getElementById('stat-max-quality').textContent = maxQuality === '0.0' ? 'N/A' : maxQuality;
+
+            // 2. Render Submissions (Pending and Completed lists)
+            renderAdminSubmissions();
+
+            // 3. Render Leaderboard
+            renderLeaderboard('admin-leaderboard-container');
+        }
+
+        function renderAdminSubmissions() {
+            const searchTerm = document.getElementById('admin-search').value.toLowerCase().trim();
+            const pendingListEl = document.getElementById('pending-submissions-list');
+            const completedListEl = document.getElementById('completed-scores-list');
+            const pendingCountEl = document.getElementById('pending-count');
+            const completedCountEl = document.getElementById('completed-count');
+
+            pendingListEl.innerHTML = '';
+            completedListEl.innerHTML = '';
+
+            // Ensure scores are treated as numbers
+            const pending = scores.filter(s => (parseFloat(s.quality_score) || 0) === 0);
+            const completed = scores.filter(s => (parseFloat(s.quality_score) || 0) > 0);
+
+            // Filter logic
+            const filterScores = (score) => {
+                const user = users.find(u => u.id === score.user_id);
+                // Handle case where user might be missing due to data inconsistency
+                if (!user) return false;
+                const searchString = `${user.name} ${user.email} ${score.submission_url} ${score.domain}`.toLowerCase();
+                return searchString.includes(searchTerm);
+            };
+
+            const filteredPending = pending.filter(filterScores);
+            const filteredCompleted = completed.filter(filterScores);
+
+            pendingCountEl.textContent = filteredPending.length;
+            completedCountEl.textContent = filteredCompleted.length;
+
+            // --- Render Pending List (Clickable) ---
+            if (filteredPending.length === 0) {
+                pendingListEl.innerHTML = `<p class="text-center text-text-color/50 py-10">No pending submissions found.</p>`;
+            } else {
+                filteredPending.forEach(score => {
+                    const user = users.find(u => u.id === score.user_id);
+                    const itemHtml = `
+                        <div class="p-3 bg-input-bg rounded-lg flex justify-between items-center hover:bg-gray-600 transition cursor-pointer" onclick="openScoreForm('${score.id}')">
+                            <div>
+                                <p class="font-semibold text-text-color">${user ? user.name : 'Unknown User'} <span class="text-xs text-red-400">(${score.domain})</span></p>
+                                <p class="text-xs text-text-color/70 truncate">${score.submission_url}</p>
+                            </div>
+                            <span class="text-xs bg-red-400 text-white px-2 py-1 rounded-full flex-shrink-0">AWAITING</span>
+                        </div>
+                    `;
+                    pendingListEl.insertAdjacentHTML('beforeend', itemHtml);
+                });
+            }
+
+            // --- Render Completed Table ---
+            if (filteredCompleted.length === 0) {
+                completedListEl.innerHTML = `<p class="text-center text-text-color/50 py-10">No completed scores found.</p>`;
+            } else {
+                let tableHtml = `
+                    <table class="min-w-full divide-y divide-gray-700">
+                        <thead class="bg-card-bg/70">
+                            <tr>
+                                <th class="px-3 py-2 text-left text-xs font-medium text-text-color/70 uppercase">Volunteer</th>
+                                <th class="px-3 py-2 text-left text-xs font-medium text-text-color/70 uppercase">Domain</th>
+                                <th class="px-3 py-2 text-left text-xs font-medium text-text-color/70 uppercase">Score</th>
+                                <th class="px-3 py-2 text-left text-xs font-medium text-text-color/70 uppercase">Contributions</th>
+                                <th class="px-3 py-2 text-left text-xs font-medium text-text-color/70 uppercase">URL</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-card-bg divide-y divide-gray-700">
+                `;
+
+                filteredCompleted.forEach(score => {
+                    const user = users.find(u => u.id === score.user_id);
+                    tableHtml += `
+                        <tr>
+                            <td class="px-3 py-2 whitespace-nowrap text-sm text-text-color/90">${user ? user.name : 'Unknown User'}</td>
+                            <td class="px-3 py-2 whitespace-nowrap text-sm text-intellexa-accent">${score.domain}</td>
+                            <td class="px-3 py-2 whitespace-nowrap text-sm font-bold text-green-400">${parseFloat(score.quality_score).toFixed(1)}/10.0</td>
+                            <td class="px-3 py-2 whitespace-nowrap text-sm text-intellexa-light">${score.contributions}</td>
+                            <td class="px-3 py-2 whitespace-nowrap text-sm">
+                                <a href="${score.submission_url}" target="_blank" class="text-blue-400 hover:underline truncate max-w-[150px] block">${score.submission_url.substring(0, 30)}...</a>
+                            </td>
+                        </tr>
+                    `;
+                });
+                tableHtml += `</tbody></table>`;
+                completedListEl.innerHTML = tableHtml;
+            }
+        }
+
+        function openScoreForm(submissionId) {
+            const submission = scores.find(s => s.id === submissionId);
+            const scoreValue = parseFloat(submission.quality_score) || 0;
+
+            if (!submission || scoreValue !== 0) {
+                console.error("Submission not found or already scored:", submissionId);
+                return;
+            }
+
+            const user = users.find(u => u.id === submission.user_id);
+            if (!user) {
+                console.error("User not found for submission:", submission.user_id);
+                return;
+            }
+
+            // Populate the scoring card details
+            document.getElementById('scoring-submission-id').value = submission.id;
+            document.getElementById('scoring-volunteer-name').textContent = `${user.name} (${user.email})`;
+            document.getElementById('scoring-domain-name').textContent = `[${submission.domain}]`;
+            document.getElementById('scoring-submission-url').href = submission.submission_url;
+            document.getElementById('scoring-submission-url').textContent = `URL: ${submission.submission_url}`;
+
+            // Reset form fields to suggested defaults
+            document.getElementById('score-entry-form').reset();
+            document.getElementById('score-contributions').value = parseInt(submission.contributions) || 1;
+            document.getElementById('score-quality').value = '8.0'; // Default score suggestion
+            document.getElementById('score-message').textContent = '';
+
+            // Show the form card
+            document.getElementById('scoring-form-card').classList.remove('hidden');
+        }
+
+        // ====================================================================
+        // --- ADMIN SCORE ENTRY LOGIC (Supabase Logic) ---
+        // ====================================================================
+
+        async function handleScoreEntry(event) {
+            event.preventDefault();
+            const submissionId = document.getElementById('scoring-submission-id').value;
+            const contributions = parseInt(document.getElementById('score-contributions').value);
+            const qualityScore = parseFloat(document.getElementById('score-quality').value);
+            const msgEl = document.getElementById('score-message');
+            msgEl.textContent = 'Publishing score...';
+            msgEl.className = 'mt-4 text-sm text-center text-yellow-400 h-5';
+
+            if (!supabase) {
+                msgEl.textContent = 'Error: Supabase is not configured.';
+                msgEl.className = 'mt-4 text-sm text-center text-red-400 h-5';
+                return;
+            }
+
+            if (contributions <= 0 || qualityScore <= 0 || qualityScore > 10) {
+                msgEl.textContent = 'Error: Score/contribution value is invalid (must be > 0.1).';
+                msgEl.className = 'mt-4 text-sm text-center text-red-400 h-5';
+                return;
+            }
+
+            // Update the score object in Supabase
+            const { error } = await supabase
+                .from('scores')
+                .update({
+                    contributions: contributions,
+                    quality_score: qualityScore
+                })
+                .eq('id', submissionId);
+
+            if (error) {
+                console.error("Scoring update error:", error);
+                msgEl.textContent = `Scoring failed: ${error.message}`;
+                msgEl.className = 'mt-4 text-sm text-center text-red-400 h-5';
+                return;
+            }
+
+            msgEl.textContent = `Score ${qualityScore.toFixed(1)} successfully logged! Leaderboard updated.`;
+            msgEl.className = 'mt-4 text-sm text-center text-green-400 h-5';
+
+            document.getElementById('scoring-form-card').classList.add('hidden');
+
+            // Re-render the admin dashboard to refresh stats, lists, and leaderboard
+            await renderAdminDashboard();
+        }
+
+
+        // --- LEADERBOARD RENDERING (Shared) ---
+        function renderLeaderboard(containerId) {
+            const leaderboardData = allLeaderboardData; // Use cached data
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+
+            const tabsHtml = `
+                <div class="flex flex-wrap space-x-2 border-b border-gray-700 mb-4" id="${containerId}-tabs">
+                    <button class="tab-btn p-2 text-sm font-semibold rounded-t-lg bg-intellexa-blue text-white transition" data-tab="Overall">Overall</button>
+                    ${APP_DOMAINS.map(domain => `<button class="tab-btn p-2 text-sm font-semibold rounded-t-lg text-text-color/70 hover:bg-card-bg transition" data-tab="${domain}">${domain}</button>`).join('')}
+                </div>
+                <div id="${containerId}-content"></div>
+            `;
+            container.insertAdjacentHTML('afterbegin', tabsHtml);
+
+            // Initial render: Overall tab
+            renderLeaderboardTable('Overall', containerId);
+
+            // Add event listeners for tabs
+            document.querySelectorAll(`#${containerId}-tabs .tab-btn`).forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const domain = e.target.dataset.tab;
+                    // Update active tab style
+                    document.querySelectorAll(`#${containerId}-tabs .tab-btn`).forEach(b => {
+                        b.classList.remove('bg-intellexa-blue', 'text-white');
+                        b.classList.add('text-text-color/70', 'hover:bg-card-bg');
+                    });
+                    e.target.classList.add('bg-intellexa-blue', 'text-white');
+                    e.target.classList.remove('text-text-color/70', 'hover:bg-card-bg');
+
+                    renderLeaderboardTable(domain, containerId);
+                });
+            });
+        }
+
+        function renderLeaderboardTable(domain, containerId) {
+            const contentEl = document.getElementById(`${containerId}-content`);
+            const leaderboardData = allLeaderboardData;
+            let data = [];
+            let headers = [];
+
+            if (domain === 'Overall') {
+                data = leaderboardData.all;
+                headers = ['Rank', 'Volunteer', 'Domains', 'Total Contrib.', 'Avg. Quality', 'Total Score'];
+            } else {
+                data = leaderboardData.domains[domain];
+                headers = ['Rank', 'Volunteer', 'Contributions', 'Avg. Quality', 'Weighted Score'];
+            }
+
+            if (!data || data.length === 0) {
+                contentEl.innerHTML = `<p class="text-text-color/50 p-4">No data available for the ${domain} domain yet (scores must be > 0).</p>`;
+                return;
+            }
+
+            let tableHtml = `
+                <table class="min-w-full divide-y divide-gray-700 rounded-lg overflow-hidden">
+                    <thead class="bg-card-bg/70">
+                        <tr>
+                            ${headers.map(h => `<th class="px-4 py-3 text-left text-xs font-medium text-text-color/70 uppercase tracking-wider">${h}</th>`).join('')}
+                        </tr>
+                    </thead>
+                    <tbody class="bg-card-bg divide-y divide-gray-700">
+            `;
+
+            data.forEach((item, index) => {
+                let rowData = [];
+                if (domain === 'Overall') {
+                    rowData = [
+                        index + 1,
+                        item.name,
+                        item.primaryDomains,
+                        item.totalContributions,
+                        item.averageQuality,
+                        item.totalScore
+                    ];
+                } else {
+                    rowData = [
+                        index + 1,
+                        item.userName,
+                        item.contributions,
+                        item.averageQuality,
+                        item.rankingScore.toFixed(1)
+                    ];
+                }
+
+                const rankClass = index === 0 ? 'text-intellexa-accent font-extrabold text-lg' :
+                    index === 1 ? 'text-intellexa-light font-bold' :
+                        index === 2 ? 'text-blue-400 font-semibold' : 'text-text-color/90';
+
+                tableHtml += `
+                    <tr class="hover:bg-gray-700 transition">
+                        ${rowData.map((d, i) => `<td class="px-4 py-3 whitespace-nowrap text-sm ${i === 0 ? rankClass : 'text-text-color/90'}">${d}</td>`).join('')}
+                    </tr>
+                `;
+            });
+
+            tableHtml += `</tbody></table>`;
+            contentEl.innerHTML = tableHtml;
+        }
+
+
+        // --- INITIALIZATION ---
+        window.onload = async function () {
+            // First attempt to load initial data and render
+            await fetchAllData();
+            renderView();
+        };
+    </script>
+</body>
+
+</html>
