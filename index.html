@@ -218,7 +218,12 @@
                         <div class="mb-4">
                             <label for="signup-email" class="block text-sm font-medium text-text-color/70">REC
                                 Email</label>
-                            <input type="email" id="signup-email" required placeholder="your.name@rec.edu"
+                            <input type="email" id="signup-email" required placeholder="your.name@rajalakshmi.edu.in" pattern="^[a-zA-Z0-9._%+-]+@rajalakshmi\.edu\.in$"
+                                class="mt-1 block w-full px-4 py-2 bg-input-bg border border-gray-600 rounded-lg text-text-color focus:ring-intellexa-accent focus:border-intellexa-accent transition">
+                        </div>
+                        <div class="mb-4">
+                            <label for="signup-phone" class="block text-sm font-medium text-text-color/70">Contact</label>
+                            <input type="text" id="signup-phone" required placeholder="your phone number" minlength="10" maxlength="10" pattern="[0-9]{10}"
                                 class="mt-1 block w-full px-4 py-2 bg-input-bg border border-gray-600 rounded-lg text-text-color focus:ring-intellexa-accent focus:border-intellexa-accent transition">
                         </div>
                     </div>
@@ -415,7 +420,7 @@
 
     <!-- Footer -->
     <footer class="bg-card-bg text-text-color/50 text-center py-4 text-sm mt-8">
-        © 2024 Intellexa Club, REC. Built for Volunteer Progress Tracking.
+        © 2025 Intellexa Club, REC. Built for Curious minds.
     </footer>
 
     <script>
@@ -606,6 +611,7 @@
             event.preventDefault();
             const name = document.getElementById('signup-name').value.trim();
             const email = document.getElementById('signup-email').value.toLowerCase().trim();
+            const phone = document.getElementById('signup-phone').value.trim();
             const password = document.getElementById('signup-password').value;
             const msgEl = document.getElementById('signup-message');
 
@@ -648,7 +654,7 @@
                 .from('users')
                 .insert([
                     // Note: Supabase can automatically convert a JS array into a Postgres TEXT[]
-                    { id: newUserId, name, email, domains: domains, password }
+                    { id: newUserId, name, email, domains: domains, password, phone }
                 ])
                 .select()
                 .single();
